@@ -41,7 +41,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late final EcsParticleSystem system;
   ui.Image? image;
-  int numParticles = 100000;
+  int numParticles = 1000;
 
   @override
   void initState() {
@@ -89,14 +89,22 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             if (image == null) CircularProgressIndicator(),
             if (image != null)
-              Expanded(
-                  child: ParticleSystemRenderer(system: system, img: image!)),
+              ParticleSystemRenderer(system: system, img: image!),
             Align(
-              alignment: Alignment.topCenter,
-              child: SizedBox(
-                child: ElevatedButton(
-                    onPressed: () => system.setSize(numParticles),
-                    child: Text("Reset")),
+              alignment: Alignment.topLeft,
+              child: Column(
+                children: [
+                  for (var x in [100, 1000, 5000, 10000, 25000, 50000, 100000])
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 4, 0, 4),
+                      child: SizedBox(
+                        height: 50,
+                        child: ElevatedButton(
+                            onPressed: () => system.setSize(x),
+                            child: Text("$x Particles")),
+                      ),
+                    ),
+                ],
               ),
             )
           ],

@@ -26,3 +26,5 @@ Time to process n particles per storage method, see [starfield_measurement.dart]
 | `List<Particle>` | 3.1ms | 4.7ms | 13.6ms | 28.2ms | 65.2ms | 127.1ms |
 
 On desktop, Starfield can comfortably *process* roughly 500k particles at 60fps in a best case scenario, but performance is mostly limited by the Flutter renderer, where ~100k particles seems to be the limit in best case.
+
+On Mobile, testing on Pixel 8a, around 50k particles appears to be where performance begins to degrade - again limited by performance of the renderer.
