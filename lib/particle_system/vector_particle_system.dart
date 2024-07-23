@@ -37,4 +37,7 @@ class VectorParticleSystem implements ParticleSystem {
     var p = positions[0];
     print("X: ${p.x}, Y: ${p.y}");
   }
+
+  @override
+  Duration get processTime => Duration.zero;
 }

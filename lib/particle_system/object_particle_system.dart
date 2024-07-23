@@ -33,4 +33,7 @@ class ObjectParticleSystem implements ParticleSystem {
     var p = _particles.first;
     print("X: ${p.position.x}, Y: ${p.position.y}");
   }
+
+  @override
+  Duration get processTime => Duration.zero;
 }

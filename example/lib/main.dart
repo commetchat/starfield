@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:show_fps/show_fps.dart';
 import 'package:starfield/particle_system/ecs_particle_system.dart';
 import 'package:starfield/starfield.dart';
 
@@ -39,41 +40,49 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late final EcsParticleSystem system;
+  EcsParticleSystem? system;
   ui.Image? image;
   int numParticles = 1000;
 
   @override
   void initState() {
-    system = EcsParticleSystem(ParticleType.sprite);
-    system.setSize(numParticles);
-
-    loadImageFromAsset("assets/star_07.png").then((loaded) {
-      setState(() {
-        image = loaded;
-      });
-    });
-
     super.initState();
+    load();
   }
 
-  Future<ui.Image> loadImageFromAsset(String assetName) async {
-    if (kIsWeb) {
-      WidgetsFlutterBinding.ensureInitialized();
-      var image = AssetImage(assetName);
-      var key = await image.obtainKey(ImageConfiguration.empty);
-      var stream = image.loadBuffer(
-          key, PaintingBinding.instance.instantiateImageCodecFromBuffer);
-      var completer = Completer<ui.Image>();
-      stream.addListener(ImageStreamListener((image, synchronousCall) {
-        completer.complete(image.image);
-      }));
-      return completer.future;
-    }
-    var buffer = await ImmutableBuffer.fromAsset(assetName);
-    var codec = await ui.instantiateImageCodecFromBuffer(buffer);
-    var frame = await codec.getNextFrame();
-    return frame.image;
+  Future<void> load() async {
+    var data = await ImmutableBuffer.fromAsset("assets/star_07.png");
+    var codec = await ui.instantiateImageCodecFromBuffer(data);
+    var sprite = ParticleSprite();
+    await sprite.init(codec: codec);
+
+    setState(() {
+      system = ParticleSystemExplosion(sprite: sprite);
+      system!.setSize(numParticles);
+    });
+  }
+
+  Future<ui.Image> textToImage(String str) async {
+    final recorder = PictureRecorder();
+    var newCanvas = Canvas(recorder);
+
+    const textStyle = TextStyle(
+      color: Colors.white,
+      fontSize: 30,
+    );
+    final textSpan = TextSpan(
+      text: str,
+      style: textStyle,
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(newCanvas, Offset.zero);
+    final picture = recorder.endRecording();
+    return await picture.toImage(
+        textPainter.width.toInt(), textPainter.height.toInt());
   }
 
   @override
@@ -87,24 +96,57 @@ class _MyHomePageState extends State<MyHomePage> {
           fit: StackFit.expand,
           alignment: Alignment.center,
           children: [
-            if (image == null) CircularProgressIndicator(),
-            if (image != null)
-              ParticleSystemRenderer(system: system, img: image!),
-            Align(
-              alignment: Alignment.topLeft,
-              child: Column(
-                children: [
-                  for (var x in [100, 1000, 5000, 10000, 25000, 50000, 100000])
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 4, 0, 4),
-                      child: SizedBox(
-                        height: 50,
+            if (system == null) CircularProgressIndicator(),
+            if (system != null)
+              ParticleSystemRenderer(
+                system: system!,
+                showPerformance: true,
+              ),
+            ShowFPS(
+              alignment: Alignment.bottomLeft,
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Column(
+                  children: [
+                    ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            var nParticles = system!.numParticles;
+                            system =
+                                ParticleSystemExplosion(sprite: system?.sprite);
+                            system?.setSize(nParticles);
+                          });
+                        },
+                        child: Text("Explosion")),
+                    SizedBox(
+                      height: 4,
+                    ),
+                    ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            var nParticles = system!.numParticles;
+                            system = ParticleSystemRain(sprite: system?.sprite);
+                            system?.setSize(nParticles);
+                          });
+                        },
+                        child: Text("Rain")),
+                    for (var x in [
+                      100,
+                      1000,
+                      5000,
+                      10000,
+                      25000,
+                      50000,
+                      100000
+                    ])
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 4, 0, 4),
                         child: ElevatedButton(
-                            onPressed: () => system.setSize(x),
+                            onPressed: () => system!.setSize(x),
                             child: Text("$x Particles")),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             )
           ],

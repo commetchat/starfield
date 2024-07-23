@@ -10,8 +10,7 @@ void main() {
     int numParticles = pow(2, 15 + i).toInt();
     print("--------");
     testSystem(ObjectParticleSystem(), "Object Based", numParticles);
-    testSystem(
-        EcsParticleSystem(ParticleType.point), "ECS Based", numParticles);
+    testSystem(EcsParticleSystem(), "ECS Based", numParticles);
     testSystem(VectorParticleSystem(), "Vector List", numParticles);
   }
 }

@@ -7,6 +7,8 @@ abstract class ParticleSystem {
 
   void printParticle();
 
+  Duration get processTime;
+
   // Float32x4 getPosition(int index);
 
   // Float32x4 getVelocity(int index);

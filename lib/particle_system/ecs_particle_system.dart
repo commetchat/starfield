@@ -1,8 +1,9 @@
 import 'dart:math';
 import 'dart:typed_data';
-
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:starfield/particle_system/particle_system.dart';
-import 'package:vector_math/vector_math_64.dart';
+import 'package:starfield/starfield.dart';
 import 'dart:math' as math;
 
 enum ParticleType {
@@ -11,9 +12,17 @@ enum ParticleType {
 }
 
 class EcsParticleSystem implements ParticleSystem {
-  ParticleType type;
+  EcsParticleSystem({this.alignment = Alignment.center, this.sprite});
+  ParticleSprite? sprite;
+  Alignment alignment;
+  Random r = Random();
 
-  EcsParticleSystem(this.type);
+  Size? currentSize;
+
+  bool ready = false;
+
+  @override
+  Duration processTime = Duration.zero;
 
   late int numParticles;
 
@@ -61,20 +70,98 @@ class EcsParticleSystem implements ParticleSystem {
     return (index * 2) + 1;
   }
 
+  @pragma('vm:prefer-inline')
+  double getPositionX(int index) {
+    return positions[indexToPosXIndex(index)];
+  }
+
+  @pragma('vm:prefer-inline')
+  double getPositionY(int index) {
+    return positions[indexToPosYIndex(index)];
+  }
+
+  @pragma('vm:prefer-inline')
+  void setPositionX(int index, double value) {
+    positions[indexToPosXIndex(index)] = value;
+  }
+
+  @pragma('vm:prefer-inline')
+  void setPositionY(int index, double value) {
+    positions[indexToPosYIndex(index)] = value;
+  }
+
+  @pragma('vm:prefer-inline')
+  double getVelocityX(int index) {
+    return velocities[indexToPosXIndex(index)];
+  }
+
+  @pragma('vm:prefer-inline')
+  double getVelocityY(int index) {
+    return velocities[indexToPosYIndex(index)];
+  }
+
+  @pragma('vm:prefer-inline')
+  void setVelocityX(int index, double value) {
+    velocities[indexToPosXIndex(index)] = value;
+  }
+
+  @pragma('vm:prefer-inline')
+  void setVelocityY(int index, double value) {
+    velocities[indexToPosYIndex(index)] = value;
+  }
+
+  @pragma('vm:prefer-inline')
+  void setColor(int index, int value) {
+    colors[index] = value;
+  }
+
+  @pragma('vm:prefer-inline')
+  int getColor(int index) {
+    return colors[index];
+  }
+
+  @pragma('vm:prefer-inline')
+  void setScale(int index, double value) {
+    scales[index] = value;
+  }
+
+  @pragma('vm:prefer-inline')
+  double getScale(int index) {
+    return scales[index];
+  }
+
+  @pragma('vm:prefer-inline')
+  void setRotation(int index, double value) {
+    rotations[index] = value;
+  }
+
+  @pragma('vm:prefer-inline')
+  double getRotation(int index) {
+    return rotations[index];
+  }
+
+  @pragma('vm:prefer-inline')
+  void setAngularVelocity(int index, double value) {
+    angularVelocities[index] = value;
+  }
+
+  @pragma('vm:prefer-inline')
+  double getAngularVelocity(int index) {
+    return angularVelocities[index];
+  }
+
   void processVelocities(double delta) {
     for (int i = 0; i < numParticles; i++) {
-      var rand = (i % 100).toDouble() / 100;
-      rand = rand * 0.1;
       int ix = indexToPosXIndex(i);
       int iy = indexToPosYIndex(i);
 
       var vx = velocities[ix];
       var vy = velocities[iy];
 
-      vy += 9.8;
+      vy += 50;
 
-      vx *= 0.98 - rand;
-      vy *= 0.98 - rand;
+      vx *= 0.98;
+      vy *= 0.98;
 
       velocities[ix] = vx;
       velocities[iy] = vy;
@@ -83,12 +170,9 @@ class EcsParticleSystem implements ParticleSystem {
 
   void processAngularVelocities(double delta) {
     for (int i = 0; i < numParticles; i++) {
-      var rand = (i % 100).toDouble() / 100;
-      rand = rand * 0.1;
       var v = angularVelocities[i];
-      v = v * (0.99 - rand);
+      v = v * (0.99);
       angularVelocities[i] = v;
-      rotations[i] = rotations[i] + (v * delta);
     }
   }
 
@@ -108,7 +192,16 @@ class EcsParticleSystem implements ParticleSystem {
     }
   }
 
+  void processRotations(double delta) {
+    for (int i = 0; i < numParticles; i++) {
+      var v = angularVelocities[i];
+      rotations[i] = rotations[i] + (v * delta);
+    }
+  }
+
   void processTransformation(double delta) {
+    double anchorX = (sprite?.width ?? 0) / 2;
+    double anchorY = (sprite?.height ?? 0) / 2;
     // update transforms
     for (int i = 0; i < numParticles; i++) {
       var scosi = indexToSCosIndex(i);
@@ -127,9 +220,6 @@ class EcsParticleSystem implements ParticleSystem {
       rstTransforms[scosi] = scos;
       rstTransforms[ssini] = ssin;
 
-      var anchorX = 256.0;
-      var anchorY = 256.0;
-
       var x = positions[pxi];
       var y = positions[pxy];
 
@@ -141,15 +231,46 @@ class EcsParticleSystem implements ParticleSystem {
     }
   }
 
+  bool shouldStop() {
+    if (currentSize == null) {
+      return false;
+    }
+
+    var offset = (-alignment).alongSize(currentSize!);
+    var bottomBound = offset.dy;
+
+    if (sprite != null) {
+      bottomBound += sprite!.height.toDouble();
+    }
+
+    for (int i = 0; i < numParticles; i++) {
+      var h = positions[indexToPosYIndex(i)];
+      if (h < bottomBound) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   @override
   void process(double delta) {
+    var s = Stopwatch()..start();
     processVelocities(delta);
     processPositions(delta);
 
-    if (type == ParticleType.sprite) {
+    if (sprite != null) {
       processAngularVelocities(delta);
+      processRotations(delta);
       processTransformation(delta);
+      sprite!.process(delta);
     }
+
+    if (shouldStop()) {
+      setSize(numParticles);
+    }
+
+    processTime = s.elapsed;
   }
 
   @override
@@ -160,7 +281,7 @@ class EcsParticleSystem implements ParticleSystem {
     positions = Float32List(particleCount * 2);
     colors = Int32List(particleCount);
 
-    if (type == ParticleType.sprite) {
+    if (sprite != null) {
       rstTransforms = Float32List(particleCount * 4);
       rotations = Float32List(particleCount);
       angularVelocities = Float32List(particleCount);
@@ -168,35 +289,26 @@ class EcsParticleSystem implements ParticleSystem {
       rects = Float32List(particleCount * 4);
     }
 
-    Random r = Random();
+    ready = false;
+  }
 
+  void init() {
+    double? rectW = sprite?.width.toDouble();
+    double? rectH = sprite?.height.toDouble();
     for (int i = 0; i < numParticles; i++) {
-      if (type == ParticleType.sprite) {
+      if (sprite != null) {
         rects[i * 4 + 0] = 0;
         rects[i * 4 + 1] = 0.0;
-        rects[i * 4 + 2] = 512;
-        rects[i * 4 + 3] = 512;
+        rects[i * 4 + 2] = rectW!;
+        rects[i * 4 + 3] = rectH!;
 
-        scales[i] = 0.1;
-        rotations[i] = r.nextDouble() * 3.14;
-        angularVelocities[i] = r.nextDouble() * 50;
-
-        colors[i] = r.nextInt(0xffffffff) | 0xff000000;
+        setDefaultSpriteProperties(i);
       }
 
-      var initialPos =
-          Vector2(r.nextDouble() - 0.5, r.nextDouble() - 0.5).normalized() *
-              1280 *
-              r.nextDouble();
-
-      positions[indexToPosXIndex(i)] = initialPos.x;
-      positions[indexToPosYIndex(i)] = initialPos.y;
-
-      var vel = initialPos * r.nextDouble() * 10;
-
-      velocities[indexToPosXIndex(i)] = vel.x;
-      velocities[indexToPosYIndex(i)] = vel.y;
+      setDefaultProperties(i);
     }
+
+    ready = true;
   }
 
   @override
@@ -205,5 +317,20 @@ class EcsParticleSystem implements ParticleSystem {
     var y = positions[indexToPosYIndex(0)];
 
     print("X: ${x}, Y: ${y}");
+  }
+
+  void setDefaultProperties(int index) {
+    positions[indexToPosXIndex(index)] = r.nextDouble() * 100;
+    positions[indexToPosYIndex(index)] = r.nextDouble() * 100;
+
+    velocities[indexToPosXIndex(index)] = r.nextDouble() * 100;
+    velocities[indexToPosYIndex(index)] = r.nextDouble() * 100;
+  }
+
+  void setDefaultSpriteProperties(int index) {
+    scales[index] = 1.0;
+    rotations[index] = r.nextDouble() * 0.5;
+    angularVelocities[index] = r.nextDouble() * 2;
+    colors[index] = 0xffffffff;
   }
 }
