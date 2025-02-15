@@ -2,6 +2,20 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+class SpriteSheetInfo {
+  int frames;
+  int frameWidth;
+  int frameHeight;
+  int framesPerSecond;
+
+  SpriteSheetInfo({
+    required this.frames,
+    required this.frameWidth,
+    required this.frameHeight,
+    required this.framesPerSecond,
+  });
+}
+
 class ParticleSprite {
   ui.Codec? imageCodec;
   ui.Image? currentImage;
@@ -11,10 +25,17 @@ class ParticleSprite {
 
   double frameTime = -1;
 
+  SpriteSheetInfo? spritesheet;
+
+  bool get isSpriteSheet => spritesheet != null;
+
   ParticleSprite();
 
-  Future<void> init({ui.Codec? codec, ui.Image? image}) async {
+  Future<void> init(
+      {ui.Codec? codec, ui.Image? image, SpriteSheetInfo? spriteSheet}) async {
     assert(image != null || codec != null);
+
+    spritesheet = spriteSheet;
 
     if (codec != null) {
       imageCodec = codec;

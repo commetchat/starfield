@@ -16,6 +16,7 @@ class EcsParticleSystem implements ParticleSystem {
   ParticleSprite? sprite;
   Alignment alignment;
   Random r = Random();
+  double time = 0;
 
   Size? currentSize;
 
@@ -126,6 +127,25 @@ class EcsParticleSystem implements ParticleSystem {
   }
 
   @pragma('vm:prefer-inline')
+  void setFrame(int index, int frame) {
+    double width = sprite?.spritesheet?.frameWidth.toDouble() ??
+        sprite?.width.toDouble() ??
+        0.0;
+    double height = sprite?.spritesheet?.frameHeight.toDouble() ??
+        sprite?.height.toDouble() ??
+        0.0;
+
+    double offset = frame.toDouble() * width;
+
+    for (int i = 0; i < numParticles; i++) {
+      rects[i * 4 + 0] = offset;
+      rects[i * 4 + 1] = 0.0;
+      rects[i * 4 + 2] = offset + width;
+      rects[i * 4 + 3] = height;
+    }
+  }
+
+  @pragma('vm:prefer-inline')
   double getScale(int index) {
     return scales[index];
   }
@@ -199,9 +219,26 @@ class EcsParticleSystem implements ParticleSystem {
     }
   }
 
+  void processRects(double delta) {
+    double rectW = sprite!.spritesheet!.frameWidth.toDouble();
+    double rectH = sprite!.spritesheet!.frameWidth.toDouble();
+
+    for (int i = 0; i < numParticles; i++) {
+      int frame = ((time * sprite!.spritesheet!.framesPerSecond).toInt() + i) %
+          sprite!.spritesheet!.frames;
+      double offset = frame.toDouble() * rectW;
+      rects[i * 4 + 0] = offset;
+      rects[i * 4 + 1] = 0.0;
+      rects[i * 4 + 2] = offset + rectW;
+      rects[i * 4 + 3] = rectH;
+    }
+  }
+
   void processTransformation(double delta) {
-    double anchorX = (sprite?.width ?? 0) / 2;
-    double anchorY = (sprite?.height ?? 0) / 2;
+    double anchorX =
+        (sprite?.spritesheet?.frameWidth ?? sprite?.width ?? 0) / 2;
+    double anchorY =
+        (sprite?.spritesheet?.frameHeight ?? sprite?.height ?? 0) / 2;
     // update transforms
     for (int i = 0; i < numParticles; i++) {
       var scosi = indexToSCosIndex(i);
@@ -255,6 +292,7 @@ class EcsParticleSystem implements ParticleSystem {
 
   @override
   void process(double delta) {
+    time += delta;
     var s = Stopwatch()..start();
     processVelocities(delta);
     processPositions(delta);
@@ -264,6 +302,9 @@ class EcsParticleSystem implements ParticleSystem {
       processRotations(delta);
       processTransformation(delta);
       sprite!.process(delta);
+      if (sprite!.isSpriteSheet) {
+        processRects(delta);
+      }
     }
 
     if (shouldStop()) {
@@ -293,15 +334,8 @@ class EcsParticleSystem implements ParticleSystem {
   }
 
   void init() {
-    double? rectW = sprite?.width.toDouble();
-    double? rectH = sprite?.height.toDouble();
     for (int i = 0; i < numParticles; i++) {
       if (sprite != null) {
-        rects[i * 4 + 0] = 0;
-        rects[i * 4 + 1] = 0.0;
-        rects[i * 4 + 2] = rectW!;
-        rects[i * 4 + 3] = rectH!;
-
         setDefaultSpriteProperties(i);
       }
 
@@ -328,9 +362,22 @@ class EcsParticleSystem implements ParticleSystem {
   }
 
   void setDefaultSpriteProperties(int index) {
-    scales[index] = 1.0;
+    scales[index] = 100.0;
     rotations[index] = r.nextDouble() * 0.5;
     angularVelocities[index] = r.nextDouble() * 2;
     colors[index] = 0xffffffff;
+
+    double? rectW = sprite?.width.toDouble();
+    double? rectH = sprite?.height.toDouble();
+
+    if (sprite?.isSpriteSheet == true) {
+      rectW = sprite!.spritesheet!.frameWidth.toDouble();
+      rectH = sprite!.spritesheet!.frameHeight.toDouble();
+    }
+
+    rects[index * 4 + 0] = 0;
+    rects[index * 4 + 1] = 0.0;
+    rects[index * 4 + 2] = rectW!;
+    rects[index * 4 + 3] = rectH!;
   }
 }

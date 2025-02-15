@@ -51,10 +51,17 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> load() async {
-    var data = await ImmutableBuffer.fromAsset("assets/star_07.png");
+    var data = await ImmutableBuffer.fromAsset(
+        "assets/fluent-emoji-revolving-hearts.png");
     var codec = await ui.instantiateImageCodecFromBuffer(data);
     var sprite = ParticleSprite();
-    await sprite.init(codec: codec);
+    await sprite.init(
+        codec: codec,
+        spriteSheet: SpriteSheetInfo(
+            frames: 47,
+            framesPerSecond: 60,
+            frameWidth: 128,
+            frameHeight: 128));
 
     setState(() {
       system = ParticleSystemExplosion(sprite: sprite);

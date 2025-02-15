@@ -24,9 +24,10 @@ class ParticleSystemExplosion extends EcsParticleSystem {
 
   @override
   void setDefaultSpriteProperties(int index) {
-    setScale(index, (index % 100) / 100 * 0.1);
-    setRotation(index, r.nextDouble() * 3.1415);
-    setColor(index, r.nextInt(0xffffffff) | 0xff000000);
+    setScale(index, (index % 100) / 100 * 1);
+    setRotation(index, r.nextDouble() - 0.5);
+    setColor(index, 0xffffffff);
+    setFrame(index, 0);
   }
 
   @override
