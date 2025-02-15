@@ -6,16 +6,19 @@ class ParticleSystemRain extends EcsParticleSystem {
     super.sprite,
     this.spriteSize = 1,
     this.gravity = 30,
+    this.height = 1000,
   }) : super(alignment: Alignment.topLeft);
 
   double spriteSize;
 
   double gravity;
 
+  double height;
+
   @override
   void setDefaultProperties(int index) {
     double x = r.nextDouble() * currentSize!.width;
-    double y = -10 + r.nextDouble() * -10000;
+    double y = -(sprite?.height ?? 10) + r.nextDouble() * -height;
 
     setPositionX(index, x);
     setPositionY(index, y);
@@ -24,7 +27,7 @@ class ParticleSystemRain extends EcsParticleSystem {
   @override
   void setDefaultSpriteProperties(int index) {
     setColor(index, 0xFFFFFFFF);
-    setScale(index, spriteSize);
+    setScale(index, (index % 100) / 100 * spriteSize);
     setRotation(index, index % 100);
   }
 

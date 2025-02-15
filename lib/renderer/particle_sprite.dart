@@ -20,8 +20,8 @@ class ParticleSprite {
   ui.Codec? imageCodec;
   ui.Image? currentImage;
 
-  int get width => currentImage!.width;
-  int get height => currentImage!.height;
+  int get width => spritesheet?.frameWidth ?? currentImage!.width;
+  int get height => spritesheet?.frameHeight ?? currentImage!.height;
 
   double frameTime = -1;
 

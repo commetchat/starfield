@@ -31,6 +31,12 @@ class _ParticleSystemRendererState extends State<ParticleSystemRenderer> {
   }
 
   @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     var fps = (1 / (widget.system.processTime.inMicroseconds / 1000000));
     if (!fps.isFinite) {
