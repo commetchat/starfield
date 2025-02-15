@@ -4,9 +4,13 @@ import 'package:starfield/particle_system/ecs_particle_system.dart';
 class ParticleSystemRain extends EcsParticleSystem {
   ParticleSystemRain({
     super.sprite,
+    this.spriteSize = 1,
+    this.gravity = 30,
   }) : super(alignment: Alignment.topLeft);
 
-  double get gravity => 30;
+  double spriteSize;
+
+  double gravity;
 
   @override
   void setDefaultProperties(int index) {
@@ -19,8 +23,8 @@ class ParticleSystemRain extends EcsParticleSystem {
 
   @override
   void setDefaultSpriteProperties(int index) {
-    setColor(index, r.nextInt(0xffffffff) | 0xff000000);
-    setScale(index, 0.1);
+    setColor(index, 0xFFFFFFFF);
+    setScale(index, spriteSize);
     setRotation(index, index % 100);
   }
 

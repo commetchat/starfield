@@ -5,9 +5,13 @@ import 'package:vector_math/vector_math_64.dart';
 class ParticleSystemExplosion extends EcsParticleSystem {
   ParticleSystemExplosion({
     super.sprite,
+    this.spriteSize = 1,
+    this.gravity = 30,
   }) : super(alignment: Alignment.center);
 
-  double get gravity => 30;
+  double spriteSize;
+
+  double gravity;
 
   @override
   void setDefaultProperties(int index) {
@@ -24,7 +28,7 @@ class ParticleSystemExplosion extends EcsParticleSystem {
 
   @override
   void setDefaultSpriteProperties(int index) {
-    setScale(index, (index % 100) / 100 * 1);
+    setScale(index, (index % 100) / 100 * spriteSize);
     setRotation(index, r.nextDouble() - 0.5);
     setColor(index, 0xffffffff);
     setFrame(index, 0);

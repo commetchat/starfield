@@ -307,10 +307,6 @@ class EcsParticleSystem implements ParticleSystem {
       }
     }
 
-    if (shouldStop()) {
-      setSize(numParticles);
-    }
-
     processTime = s.elapsed;
   }
 
